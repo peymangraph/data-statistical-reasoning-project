@@ -1,0 +1,153 @@
+\documentclass[12pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+
+\doublespacing
+\setlength{\parindent}{0.5in}
+\setlength{\headheight}{15pt}
+
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black,pdftitle={Statistical Analysis Report: San Francisco 311 Service Requests},pdfauthor={Peyman Mohammad Hassan}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{\small Project 2 --- Data and Statistical Reasoning}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\titleformat{\section}{\normalfont\bfseries\fontsize{12}{14}\selectfont}{}{0pt}{}
+\titleformat{\subsection}{\normalfont\bfseries\fontsize{12}{14}\selectfont}{}{0pt}{}
+
+\newcommand{\resultplaceholder}[1]{\textbf{[Insert executed notebook result: #1]}}
+
+\begin{document}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+\vspace*{1.1in}
+{\Large\bfseries Project 2 --- Data and Statistical Reasoning\par}
+\vspace{0.22in}
+{\LARGE\bfseries Statistical Analysis Report\par}
+\vspace{0.5in}
+{\large\bfseries San Francisco 311 Service-Request Resolution Times\par}
+\vspace{0.7in}
+\begin{tabular}{>{\bfseries}rl}
+Student: & Peyman Mohammad Hassan \\
+Dataset: & San Francisco 311 Cases \\
+Source: & DataSF / San Francisco 311 \\
+Repository: & data-statistical-reasoning-project \\
+Submission Date: & September 2026 \\
+\end{tabular}
+\vfill
+\begin{minipage}{0.84\textwidth}
+\centering\small
+This report documents a reproducible statistical analysis of real, publicly available San Francisco 311 service-request data. The project focuses on descriptive statistics, visualization, hypothesis testing, interpretation, limitations, bias awareness, and communication for technical and non-technical audiences.
+\end{minipage}
+\vspace*{0.7in}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+\section*{Overview}
+This project analyzes real public San Francisco 311 service-request data to understand patterns in case resolution time and whether resolution-time behavior differs across common service categories. The analysis uses descriptive statistics, three visual models, and a nonparametric hypothesis test so that conclusions are grounded in the observed structure of the data rather than in synthetic or simulated records.
+
+The dataset is sourced from the City and County of San Francisco's DataSF open-data portal. The project uses the public SF311 dataset view identified as \texttt{syr9-3867}. The submitted CSV is a frozen snapshot so the notebook can be reproduced without depending on a changing live API response.
+
+\section*{Dataset Description}
+The submitted dataset is a public San Francisco 311 extract obtained from DataSF. Each row represents a 311 service request and includes fields such as case identifier, opened and closed timestamps, status, responsible agency, service category, request type, request details, address, neighborhood, supervisor district, geographic point, source, and media URL.
+
+The frozen CSV contains \resultplaceholder{total row count} rows and \resultplaceholder{total column count} columns. The main variables examined are \texttt{Category}, \texttt{Opened}, \texttt{Closed}, and a derived numeric variable named \texttt{resolution\_hours}, calculated as elapsed time between case opening and closure. Only records with valid timestamps and non-negative elapsed times are used in the primary resolution-time analysis.
+
+\begin{table}[ht]
+\centering\small
+\caption{Key variables used in the analysis.}
+\begin{tabular}{p{0.27\textwidth}p{0.62\textwidth}}
+\toprule
+\textbf{Variable} & \textbf{Analytical role} \\
+\midrule
+\texttt{CaseID} & Identifier used to inspect duplicate records. \\
+\texttt{Opened} & Timestamp when the 311 case was created. \\
+\texttt{Closed} & Timestamp when the case was closed. \\
+\texttt{Category} & Primary categorical grouping variable. \\
+\texttt{Request Type} & Detailed service classification used during exploration. \\
+\texttt{Neighborhood} & Geographic grouping variable considered in bias discussions. \\
+\texttt{Source} & Reporting channel such as phone, web, or mobile/Open311. \\
+\texttt{resolution\_hours} & Derived numeric measure of elapsed time from opening to closure. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Methods}
+\subsection*{Initial Data Analysis and Reproducibility}
+Before formal hypothesis testing, the notebook inspects column names, data types, missingness, duplicate identifiers, category frequencies, timestamp validity, and the distribution of the derived resolution-time variable. This follows the reproducibility-oriented principle that important data properties and analytical assumptions should be identified and documented before confirmatory analysis. Lusa et al. (2024) emphasize systematic initial data analysis as a foundation for reproducible and valid downstream statistical work.
+
+The notebook is designed to run from top to bottom using the frozen CSV included with the submission. The final Python environment is recorded with \texttt{pip freeze > requirements.txt}.
+
+\subsection*{Descriptive Statistics}
+Descriptive statistics include \texttt{df.describe()}, categorical value counts, and targeted summaries of \texttt{resolution\_hours}. These measures characterize central tendency, spread, scale, missingness, and dataset composition. Because administrative response-time variables can be strongly skewed, medians and quartiles are emphasized alongside means.
+
+\subsection*{Three Visual Models}
+Three visual models are used because each represents a different aspect of the same pattern.
+\begin{enumerate}[label=\textbf{Visual Model \arabic*:},leftmargin=*]
+\item \textbf{Histogram of resolution time.} Shows overall distribution shape, skewness, concentration, and long tails.
+\item \textbf{Boxplot of resolution time by service category.} Compares medians, spread, and outliers across common categories.
+\item \textbf{Bar chart of median resolution time by category.} Provides a concise category-level comparison accessible to non-technical readers.
+\end{enumerate}
+
+The boxplot provides the strongest direct support for the main analytical question because it compares the group distributions that are tested statistically. The histogram gives essential context about the overall distribution, while the bar chart is easiest to read but hides within-category variability.
+
+\subsection*{Research Question and Hypothesis Test}
+The primary analytical question is whether the two most common closed San Francisco 311 service categories have different resolution-time distributions.
+
+\begin{itemize}
+\item \textbf{$H_0$:} The resolution-time distributions for the two most common closed service categories are the same.
+\item \textbf{$H_1$:} The resolution-time distributions for the two most common closed service categories differ.
+\end{itemize}
+
+After inspecting the observed distributions, the notebook uses a two-sided Mann--Whitney U test. The Mann--Whitney procedure is a rank-based method for comparing two independent groups without requiring the measured variable to be normally distributed (Mann \& Whitney, 1947). The significance level is $\alpha=0.05$.
+
+The analysis is observational. A statistically detectable difference is interpreted as an association within this dataset, not as proof that category membership causes faster or slower service resolution.
+
+\section*{Results}
+The executed notebook reports \resultplaceholder{number of submitted records}, of which \resultplaceholder{number of closed records with valid non-negative resolution times} are usable for the primary analysis. The two most common eligible service categories are \resultplaceholder{category A} and \resultplaceholder{category B}.
+
+For \resultplaceholder{category A}, the analysis includes \resultplaceholder{sample size A} cases with a median resolution time of \resultplaceholder{median A hours} hours. For \resultplaceholder{category B}, the analysis includes \resultplaceholder{sample size B} cases with a median resolution time of \resultplaceholder{median B hours} hours.
+
+Figure 1 shows the overall resolution-time distribution. Figure 2 compares the selected category distributions and provides the clearest visual support for the hypothesis-test question because it retains information about medians, spread, and extreme values. Figure 3 compares category-level median resolution times and provides the simplest high-level summary.
+
+The Mann--Whitney U test produces a test statistic of \resultplaceholder{U statistic} and a two-sided p-value of \resultplaceholder{p-value}. The final decision is \resultplaceholder{reject or fail to reject the null hypothesis}. The conclusion must match the actual executed notebook output and should be framed as evidence about this public administrative dataset rather than as a causal evaluation of city performance.
+
+\section*{Interpretation for a Non-Technical Audience}
+San Francisco 311 requests do not all move through the city at the same speed. Different request types can involve different agencies, inspections, equipment, staffing, legal requirements, or follow-up steps. The visualizations show how long cases typically remain open and how that timing differs across common request categories.
+
+The statistical test asks whether the observed difference between the two largest eligible service categories is large enough that it would be unusual if the groups actually had the same underlying resolution-time distribution. A statistically significant result would indicate evidence of a difference in recorded resolution-time patterns, but it would not mean that one department is automatically performing better or worse. Case complexity and administrative processes may differ substantially between categories.
+
+Among the three visual models, the boxplot is most useful for the analytical question because it shows group medians and variability together. The median bar chart is easiest for a broad audience to interpret quickly, while the histogram is best for understanding the overall shape and skewness of resolution time.
+
+\section*{Limitations and Potential Bias}
+\subsection*{Dataset Limitations}
+The SF311 dataset contains only cases recorded through the city's 311 system and therefore does not represent every service need experienced by residents. Some cases may remain open, be administratively closed, be duplicates, or be resolved through processes not fully represented by the available timestamps.
+
+Resolution time is also an imperfect performance measure. It can depend on case complexity, responsible agency, resource availability, legal requirements, scheduling, inspections, weather, duplicate consolidation, and administrative closure practices.
+
+\subsection*{Potential Bias}
+Reporting access and behavior may vary by neighborhood, language, digital access, socioeconomic conditions, awareness of 311, trust in government services, and preferred communication channel. Areas with more recorded requests may reflect higher reporting activity rather than objectively greater service problems. Missing closed timestamps can also create selection bias because cases without completed closure information are excluded from resolution-time analysis.
+
+\subsection*{Ethical and Misuse Risk}
+A potential misuse would be ranking neighborhoods, agencies, or communities solely by complaint volume or raw resolution time. Such rankings could reinforce misleading narratives if they ignore reporting differences, case mix, service complexity, or administrative practices. This project therefore treats the findings as descriptive evidence about recorded 311 cases and avoids causal claims or simplistic performance rankings. Transparent initial data analysis and explicit assumptions help reduce the risk of overstating what administrative data can support (Lusa et al., 2024).
+
+\section*{References}
+Lusa, L., Proust-Lima, C., Schmidt, C. O., Lee, K. J., le Cessie, S., Baillie, M., et al. (2024). Initial data analysis for longitudinal studies to build a solid foundation for reproducible analysis. \textit{PLOS ONE, 19}(5), e0295726. \url{https://doi.org/10.1371/journal.pone.0295726}
+
+Mann, H. B., \& Whitney, D. R. (1947). On a test of whether one of two random variables is stochastically larger than the other. \textit{The Annals of Mathematical Statistics, 18}(1), 50--60. \url{https://doi.org/10.1214/aoms/1177730491}
+
+\section*{Finalization Note}
+Items marked with \textbf{[Insert executed notebook result: ...]} must be replaced only after \texttt{analysis.ipynb} has been executed successfully against the frozen \texttt{sf311\_cases.csv}. This keeps the final written report synchronized with the actual notebook outputs and prevents invented or stale numerical results.
+
+\end{document}
